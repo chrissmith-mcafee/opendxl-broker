@@ -302,8 +302,27 @@ int mqtt3_handle_connect(struct mosquitto_db *db, struct mosquitto *context)
     }
     // DXL end
 
-    // DXL begin
-    if(true){ // Check currently disabled
+    // DXL begin              
+    bool client_id_local = (strncmp(client_id, DXL_LOCAL_ID, strlen(DXL_LOCAL_ID)) == 0);
+
+    if(context->tls_certtype == broker){
+        // Valid admin or local connection (using broker certificate)
+        if(client_id_local){
+            context->dxl_flags |= DXL_FLAG_LOCAL;
+            if(IS_DEBUG_ENABLED)
+                _mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "Local connection detected.");
+        }
+    } else if(client_id_local){
+        // Invalid admin or local connection
+        _mosquitto_free(client_id);
+        _mosquitto_send_connack(context, CONNACK_REFUSED_NOT_AUTHORIZED);
+        mqtt3_context_disconnect(db, context);
+        if(IS_DEBUG_ENABLED)
+            _mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "Connection refused not authorized.");
+        return MOSQ_ERR_SUCCESS;
+    }
+       
+    if (!client_id_local) {  
         if(!context->is_bridge){
             // Unmanaged connection
             struct cert_hashes *current, *tmp;
