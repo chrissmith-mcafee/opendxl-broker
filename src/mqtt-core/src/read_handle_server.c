@@ -182,17 +182,15 @@ int mqtt3_handle_connect(struct mosquitto_db *db, struct mosquitto *context)
     _mosquitto_free(protocol_name);
 
     context->tls_certtype = client;
-    if((protocol_version&0x80) == 0x80){
-        // Determine if the broker attempting to bridge is a valid
-        // broker certificate
-        struct cert_hashes *current, *tmp;
-        HASH_ITER(hh, context->cert_hashes, current, tmp){
-            if(mqtt3_config_is_broker_cert(current->cert_sha1)){
-                context->tls_certtype = broker;
-                break;
-            }
+    struct cert_hashes *current, *tmp;
+    HASH_ITER(hh, context->cert_hashes, current, tmp){
+        if(mqtt3_config_is_broker_cert(current->cert_sha1)){
+            context->tls_certtype = broker;
+            break;
         }
-
+    }
+   
+    if((protocol_version&0x80) == 0x80){
         if(context->tls_certtype != broker){
             _mosquitto_log_printf(NULL, MOSQ_LOG_INFO, "Client \"%s\" not authorized to bridge to broker",
                 context->address);
@@ -200,7 +198,6 @@ int mqtt3_handle_connect(struct mosquitto_db *db, struct mosquitto *context)
             mqtt3_context_disconnect(db, context);
             return MOSQ_ERR_PROTOCOL;
         }
-
         context->is_bridge = true;
     }
 
@@ -305,8 +302,6 @@ int mqtt3_handle_connect(struct mosquitto_db *db, struct mosquitto *context)
     // DXL begin              
     bool client_id_local = (strncmp(client_id, DXL_LOCAL_ID, strlen(DXL_LOCAL_ID)) == 0);
        
-_mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "## client_id_local: %d", client_id_local);
-
     if(context->tls_certtype == broker){
         // Valid admin or local connection (using broker certificate)
         if(client_id_local){
