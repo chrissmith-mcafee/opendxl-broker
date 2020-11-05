@@ -304,6 +304,8 @@ int mqtt3_handle_connect(struct mosquitto_db *db, struct mosquitto *context)
 
     // DXL begin              
     bool client_id_local = (strncmp(client_id, DXL_LOCAL_ID, strlen(DXL_LOCAL_ID)) == 0);
+       
+_mosquitto_log_printf(NULL, MOSQ_LOG_DEBUG, "## client_id_local: %d", client_id_local);
 
     if(context->tls_certtype == broker){
         // Valid admin or local connection (using broker certificate)
